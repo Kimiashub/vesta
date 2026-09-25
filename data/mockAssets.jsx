@@ -1,0 +1,38 @@
+export const assets = [
+  {
+    id: 1,
+    symbol: "NVDA",
+    name: "NVIDIA",
+    type: "Stock",
+    price: 178.42,
+    change: 4.8,
+    trend: "up",
+  },
+  {
+    id: 2,
+    symbol: "AAPL",
+    name: "Apple",
+    type: "Stock",
+    price: 231.12,
+    change: 1.3,
+    trend: "up",
+  },
+  {
+    id: 3,
+    symbol: "MSFT",
+    name: "Microsoft",
+    type: "Stock",
+    price: 424.15,
+    change: 2.1,
+    trend: "up",
+  },
+  {
+    id: 4,
+    symbol: "TSLA",
+    name: "Tesla",
+    type: "Stock",
+    price: 312.42,
+    change: -3.7,
+    trend: "down",
+  },
+];
