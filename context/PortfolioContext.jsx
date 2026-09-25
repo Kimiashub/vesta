@@ -15,7 +15,6 @@ export function PortfolioProvider({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // LOAD DATA FROM LOCALSTORAGE
-
   useEffect(() => {
     const savedPortfolio =
       localStorage.getItem("vestaPortfolio");
@@ -25,11 +24,15 @@ export function PortfolioProvider({ children }) {
 
     try {
       if (savedPortfolio) {
-        setPortfolio(JSON.parse(savedPortfolio));
+        setPortfolio(
+          JSON.parse(savedPortfolio)
+        );
       }
 
       if (savedTransactions) {
-        setTransactions(JSON.parse(savedTransactions));
+        setTransactions(
+          JSON.parse(savedTransactions)
+        );
       }
     } catch (error) {
       console.error(
@@ -42,7 +45,6 @@ export function PortfolioProvider({ children }) {
   }, []);
 
   // SAVE PORTFOLIO
-
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem(
@@ -53,7 +55,6 @@ export function PortfolioProvider({ children }) {
   }, [portfolio, isLoaded]);
 
   // SAVE TRANSACTIONS
-
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem(
@@ -64,7 +65,6 @@ export function PortfolioProvider({ children }) {
   }, [transactions, isLoaded]);
 
   // BUY STOCK
-
   function buyStock(stock, quantity) {
     setPortfolio((currentPortfolio) => {
       const existingInvestment =
@@ -118,7 +118,7 @@ export function PortfolioProvider({ children }) {
       ];
     });
 
-    // Save transaction
+    // Save buy transaction
     const newTransaction = {
       id: crypto.randomUUID(),
       type: "buy",
@@ -129,70 +129,22 @@ export function PortfolioProvider({ children }) {
       date: new Date().toISOString(),
     };
 
-    setTransactions((currentTransactions) => [
-      newTransaction,
-      ...currentTransactions,
-    ]);
+    setTransactions(
+      (currentTransactions) => [
+        newTransaction,
+        ...currentTransactions,
+      ]
+    );
   }
 
   // SELL STOCK
-
   function sellStock(stock, quantity) {
-  const investment = portfolio.find(
-    (investment) =>
-      investment.symbol === stock.symbol
-  );
+    const investment = portfolio.find(
+      (investment) =>
+        investment.symbol === stock.symbol
+    );
 
-  if (!investment) {
-    return;
-  }
-
-  const quantityToSell = Math.min(
-    quantity,
-    investment.quantity
-  );
-
-  setPortfolio((currentPortfolio) => {
-    return currentPortfolio
-      .map((investment) => {
-        if (
-          investment.symbol === stock.symbol
-        ) {
-          return {
-            ...investment,
-            quantity:
-              investment.quantity -
-              quantityToSell,
-          };
-        }
-
-        return investment;
-      })
-      .filter(
-        (investment) =>
-          investment.quantity > 0
-      );
-  });
-
-  const newTransaction = {
-    id: crypto.randomUUID(),
-    type: "sell",
-    symbol: stock.symbol,
-    name: stock.name,
-    quantity: quantityToSell,
-
-    price: stock.price,
-
-    date: new Date().toISOString(),
-  };
-
-  setTransactions((currentTransactions) => [
-    newTransaction,
-    ...currentTransactions,
-  ]);
-}
-
-    // Safety check
+    // Stock does not exist in portfolio
     if (!investment) {
       return;
     }
@@ -207,7 +159,7 @@ export function PortfolioProvider({ children }) {
       return currentPortfolio
         .map((investment) => {
           if (
-            investment.symbol === symbol
+            investment.symbol === stock.symbol
           ) {
             return {
               ...investment,
@@ -225,25 +177,26 @@ export function PortfolioProvider({ children }) {
         );
     });
 
-    // Save transaction
+    // Save sell transaction
     const newTransaction = {
       id: crypto.randomUUID(),
       type: "sell",
-      symbol: investment.symbol,
-      name: investment.name,
+      symbol: stock.symbol,
+      name: stock.name,
       quantity: quantityToSell,
-      price: investment.price,
+      price: stock.price,
       date: new Date().toISOString(),
     };
 
-    setTransactions((currentTransactions) => [
-      newTransaction,
-      ...currentTransactions,
-    ]);
+    setTransactions(
+      (currentTransactions) => [
+        newTransaction,
+        ...currentTransactions,
+      ]
+    );
   }
 
   // PROVIDER
-
   return (
     <PortfolioContext.Provider
       value={{
@@ -256,7 +209,7 @@ export function PortfolioProvider({ children }) {
       {children}
     </PortfolioContext.Provider>
   );
-
+}
 
 export function usePortfolio() {
   return useContext(PortfolioContext);
