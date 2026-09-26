@@ -4,21 +4,85 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import BottomNav from "../../components/bottomNav";
 
+
 export default function MarketsPage() {
   const [search, setSearch] = useState("");
 
-  // Full search results
   const [assets, setAssets] = useState([]);
 
-  // Suggestions shown while typing
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] =
+    useState([]);
 
-  const [loading, setLoading] = useState(false);
-  const [suggestionsLoading, setSuggestionsLoading] =
+  const [loading, setLoading] =
     useState(false);
 
+  const [
+    suggestionsLoading,
+    setSuggestionsLoading,
+  ] = useState(false);
+
   const [error, setError] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
+
+  const [hasSearched, setHasSearched] =
+    useState(false);
+
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] = useState("stocks");
+
+  const [
+    featuredAssets,
+    setFeaturedAssets,
+  ] = useState([]);
+
+  const [
+    featuredLoading,
+    setFeaturedLoading,
+  ] = useState(true);
+
+  const [
+    featuredError,
+    setFeaturedError,
+  ] = useState("");
+
+  // LOAD FEATURED ASSETS
+
+ useEffect(() => {
+   async function loadFeaturedAssets() {
+    try {
+      setFeaturedLoading(true);
+      setFeaturedError("");
+
+      const response = await fetch(
+        `/api/markets/featured?category=${selectedCategory}`
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Could not load market suggestions."
+        );
+      }
+
+      setFeaturedAssets(data);
+    } catch (error) {
+      setFeaturedError(
+        error.message ||
+          "Could not load market suggestions."
+      );
+
+      setFeaturedAssets([]);
+    } finally {
+      setFeaturedLoading(false);
+    }
+  }
+
+  loadFeaturedAssets();
+}, [selectedCategory]);
 
   // AUTOCOMPLETE
 
@@ -28,33 +92,42 @@ export default function MarketsPage() {
       return;
     }
 
-    const timeout = setTimeout(async () => {
-      try {
-        setSuggestionsLoading(true);
+    const timeout = setTimeout(
+      async () => {
+        try {
+          setSuggestionsLoading(true);
 
-        const response = await fetch(
-          `/api/stocks/search?query=${encodeURIComponent(
-            search
-          )}`
-        );
+          const response = await fetch(
+            `/api/stocks/search?query=${encodeURIComponent(
+              search
+            )}`
+          );
 
-        const data = await response.json();
+          const data =
+            await response.json();
 
-        if (!response.ok) {
-          throw new Error(
-            data.error || "Could not search stocks"
+          if (!response.ok) {
+            throw new Error(
+              data.error ||
+                "Could not search stocks"
+            );
+          }
+
+          setSuggestions(
+            data.slice(0, 6)
+          );
+        } catch (error) {
+          console.error(error);
+
+          setSuggestions([]);
+        } finally {
+          setSuggestionsLoading(
+            false
           );
         }
-
-        // Only show 6 suggestions in dropdown
-        setSuggestions(data.slice(0, 6));
-      } catch (error) {
-        console.error(error);
-        setSuggestions([]);
-      } finally {
-        setSuggestionsLoading(false);
-      }
-    }, 400);
+      },
+      400
+    );
 
     return () => {
       clearTimeout(timeout);
@@ -67,7 +140,10 @@ export default function MarketsPage() {
     event.preventDefault();
 
     if (!search.trim()) {
-      setError("Enter a company or stock symbol.");
+      setError(
+        "Enter a company or stock symbol."
+      );
+
       return;
     }
 
@@ -76,7 +152,6 @@ export default function MarketsPage() {
       setError("");
       setHasSearched(true);
 
-      // Close autocomplete dropdown
       setSuggestions([]);
 
       const response = await fetch(
@@ -85,32 +160,64 @@ export default function MarketsPage() {
         )}`
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.error || "Something went wrong"
+          data.error ||
+            "Something went wrong"
         );
       }
 
-      // Save ALL returned search results
       setAssets(data);
     } catch (error) {
       setError(error.message);
+
       setAssets([]);
     } finally {
       setLoading(false);
     }
   }
 
+  // CHANGE CATEGORY
+
+  function changeCategory(category) {
+    setSelectedCategory(category);
+
+    setHasSearched(false);
+    setAssets([]);
+    setError("");
+    setSearch("");
+    setSuggestions([]);
+  }
+
+  // CATEGORY TITLE
+
+  function getCategoryTitle() {
+    if (selectedCategory === "stocks") {
+      return "Trending stocks";
+    }
+
+    if (selectedCategory === "funds") {
+      return "Popular funds";
+    }
+
+    return "Popular ETFs";
+  }
+
   return (
     <main className="app-page">
       <header className="page-header">
-        <p className="eyebrow">Discover</p>
+        <p className="eyebrow">
+          Discover
+        </p>
+
         <h1>Markets</h1>
       </header>
 
-      {/* Search */}
+      {/* SEARCH */}
+
       <form
         className="market-search"
         onSubmit={searchStocks}
@@ -122,23 +229,37 @@ export default function MarketsPage() {
             placeholder="Search Apple, NVIDIA, Microsoft..."
             value={search}
             onChange={(event) => {
-              setSearch(event.target.value);
+              setSearch(
+                event.target.value
+              );
 
-              // Hide old full results when starting
-              // a completely new search
               setHasSearched(false);
+              setError("");
             }}
           />
 
           <button
-            className="search-button"
+            className="search-icon-button"
             type="submit"
+            aria-label="Search"
           >
-            Search
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M21 21l-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
           </button>
         </div>
 
-        {/* Autocomplete dropdown */}
+        {/* AUTOCOMPLETE */}
+
         {search.trim() &&
           !hasSearched && (
             <div className="search-results">
@@ -149,67 +270,118 @@ export default function MarketsPage() {
               )}
 
               {!suggestionsLoading &&
-                suggestions.length === 0 && (
+                suggestions.length ===
+                  0 && (
                   <p className="search-message">
                     No suggestions found.
                   </p>
                 )}
 
               {!suggestionsLoading &&
-                suggestions.map((asset) => (
-                  <Link
-                    href={`/asset/${asset.symbol}`}
-                    key={`${asset.symbol}-${asset.exchange}`}
-                    className="search-result"
-                  >
-                    <div className="search-result-symbol">
-                      {asset.symbol}
-                    </div>
+                suggestions.map(
+                  (asset) => (
+                    <Link
+                      href={`/asset/${asset.symbol}`}
+                      key={`${asset.symbol}-${asset.exchange}`}
+                      className="search-result"
+                    >
+                      <div className="search-result-symbol">
+                        {asset.symbol}
+                      </div>
 
-                    <div className="search-result-info">
-                      <strong>
-                        {asset.name}
-                      </strong>
+                      <div className="search-result-info">
+                        <strong>
+                          {asset.name}
+                        </strong>
 
-                      <span>
-                        {asset.exchange} ·{" "}
-                        {asset.type}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
+                        <span>
+                          {asset.exchange} ·{" "}
+                          {asset.type}
+                        </span>
+                      </div>
+                    </Link>
+                  )
+                )}
             </div>
           )}
       </form>
 
-      {/* Categories */}
+      {/* CATEGORIES */}
+
       <div className="market-tabs">
-        <button className="selected">
+        <button
+          className={
+            selectedCategory ===
+            "stocks"
+              ? "selected"
+              : ""
+          }
+          onClick={() =>
+            changeCategory("stocks")
+          }
+        >
           Stocks
         </button>
 
-        <button>
+        <button
+          className={
+            selectedCategory ===
+            "funds"
+              ? "selected"
+              : ""
+          }
+          onClick={() =>
+            changeCategory("funds")
+          }
+        >
           Funds
         </button>
 
-        <button>
+        <button
+          className={
+            selectedCategory === "etfs"
+              ? "selected"
+              : ""
+          }
+          onClick={() =>
+            changeCategory("etfs")
+          }
+        >
           ETFs
         </button>
       </div>
 
-      {/* Full search results */}
-      <section className="section">
-        <h2>
-          {hasSearched
-            ? "Search results"
-            : "Assets"}
-        </h2>
+      {/* MARKET CONTENT */}
 
-        {loading && (
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>
+              {hasSearched
+                ? "Search results"
+                : getCategoryTitle()}
+            </h2>
+
+            {!hasSearched &&
+              selectedCategory ===
+                "stocks" && (
+                <p className="secondary-text">
+                  Sorted by today's
+                  performance
+                </p>
+              )}
+          </div>
+        </div>
+
+        {/* FULL SEARCH LOADING */}
+
+        {hasSearched && loading && (
           <p className="secondary-text">
             Loading market data...
           </p>
         )}
+
+        {/* SEARCH ERROR */}
 
         {error && (
           <p className="negative">
@@ -217,23 +389,19 @@ export default function MarketsPage() {
           </p>
         )}
 
+        {/* NO SEARCH RESULTS */}
+
         {!loading &&
           !error &&
           hasSearched &&
           assets.length === 0 && (
             <p className="secondary-text">
-              No assets found for "{search}".
+              No assets found for "
+              {search}".
             </p>
           )}
 
-        {!loading &&
-          !error &&
-          !hasSearched && (
-            <p className="secondary-text">
-              Search for a company or stock symbol
-              to discover assets.
-            </p>
-          )}
+        {/* SEARCH RESULTS */}
 
         {!loading &&
           !error &&
@@ -247,7 +415,9 @@ export default function MarketsPage() {
                   key={`${asset.symbol}-${asset.exchange}`}
                 >
                   <div className="asset-symbol">
-                    {asset.symbol.charAt(0)}
+                    {asset.symbol.charAt(
+                      0
+                    )}
                   </div>
 
                   <div className="asset-info">
@@ -273,6 +443,113 @@ export default function MarketsPage() {
                 </Link>
               ))}
             </div>
+          )}
+
+        {/* FEATURED LOADING */}
+
+        {!hasSearched &&
+          featuredLoading && (
+            <p className="secondary-text">
+              Loading market
+              suggestions...
+            </p>
+          )}
+
+        {/* FEATURED ERROR */}
+
+        {!hasSearched &&
+          featuredError && (
+            <p className="negative">
+              {featuredError}
+            </p>
+          )}
+
+        {/* FEATURED ASSETS */}
+
+        {!hasSearched &&
+          !featuredLoading &&
+          !featuredError &&
+          featuredAssets.length >
+            0 && (
+            <div className="asset-list">
+              {featuredAssets.map(
+                (asset) => {
+                  const change =
+                    Number(
+                      asset.changePercent
+                    ) || 0;
+
+                  const price =
+                    Number(asset.price);
+
+                  return (
+                    <Link
+                      href={`/asset/${asset.symbol}`}
+                      className="asset-row"
+                      key={asset.symbol}
+                    >
+                      <div className="asset-symbol">
+                        {asset.symbol.charAt(
+                          0
+                        )}
+                      </div>
+
+                      <div className="asset-info">
+                        <strong>
+                          {asset.name ||
+                            asset.symbol}
+                        </strong>
+
+                        <span>
+                          {asset.symbol}
+                        </span>
+                      </div>
+
+                      <div className="asset-price">
+                        <strong>
+                          {Number.isFinite(
+                            price
+                          )
+                            ? `$${price.toFixed(
+                                2
+                              )}`
+                            : "N/A"}
+                        </strong>
+
+                        <span
+                          className={
+                            change >= 0
+                              ? "positive"
+                              : "negative"
+                          }
+                        >
+                          {change >= 0
+                            ? "+"
+                            : ""}
+                          {change.toFixed(
+                            2
+                          )}
+                          %
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                }
+              )}
+            </div>
+          )}
+
+        {/* NO FEATURED ASSETS */}
+
+        {!hasSearched &&
+          !featuredLoading &&
+          !featuredError &&
+          featuredAssets.length ===
+            0 && (
+            <p className="secondary-text">
+              No market suggestions
+              available right now.
+            </p>
           )}
       </section>
 
